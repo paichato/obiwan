@@ -147,12 +147,7 @@ function Home({ prePeople, prePlanets }) {
           Explore o mundo STAR WARS
         </span>
 
-        <div
-          className="flex max-w-3xl mt-32 min-w-1  "
-          hasError={!!inputError}
-          // onSubmit={(e) => handleSearch(e)}
-          action=""
-        >
+        <div className="flex max-w-3xl mt-32 min-w-1  " action="">
           <input
             className="flex  flex-1 outline-0 h-20 py-0 xl:px-24 md:px-24 pl-5 sm:pl-5 border-0 rounded-l text-stale-900  placeholder:text-slate-700"
             value={search}
@@ -201,7 +196,13 @@ function Home({ prePeople, prePlanets }) {
           )}
           {starwarsData &&
             starwarsData?.map((starWarsItem, index) => {
-              return <ItemLink filter={filter} starWarsItem={starWarsItem} />;
+              return (
+                <ItemLink
+                  key={starWarsItem.url}
+                  filter={filter}
+                  starWarsItem={starWarsItem}
+                />
+              );
             })}
         </div>
       </div>
