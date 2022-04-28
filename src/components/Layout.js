@@ -22,7 +22,6 @@ export default function Layout({ children }) {
           {children}
         </div>
       </main>
-      {/* <Footer /> */}
     </div>
   );
 }

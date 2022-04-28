@@ -1,154 +1,221 @@
-import Head from "next/head";
+import React, { useState, useEffect } from "react";
+
+import Link from "next/link";
+import { http } from "../services/axios";
 import Image from "next/image";
-import styles from "../../styles/Home.module.css";
-import Logo from "../../public/logo.svg";
-import { IoSearchSharp } from "react-icons/io5";
-import { createRef, useRef, useEffect, useState } from "react";
-import Sound from "react-sound";
-import { SearchField } from "../components/SearchField";
+import { ItemLink } from "../components/ItemLink";
+import Head from "next/head";
 
-export default function Home() {
-  const soundRef = createRef();
-  const soundRef2 = createRef();
-  const iconRef = useRef();
-  const iconRef2 = useRef();
-  const [searching, setSearching] = useState(false);
+function Home({ prePeople, prePlanets }) {
+  const [search, setSearch] = useState("");
+  const [inputError, setInputError] = useState(" ");
+  const [searchInput, setSearchInput] = useState("");
+  const [filter, setFilter] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [people, setPeople] = useState(prePeople);
+  const [planets, setPlanets] = useState(prePlanets);
 
-  const toggleSearching = () => {
-    setSearching(!searching);
+  const filterStyles = [
+    " p-5 bg-transparent border-slate-300 text-slate-800 border-8 inner-5 rounded  drop-shadow-lg px-3",
+    "p-5 bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded ",
+  ];
+  const [starwarsData, setStarwarsData] = useState(() => {
+    const storagedStarWarsData =
+      typeof window !== "undefined"
+        ? localStorage.getItem("@StarWars:starwarsData")
+        : prePeople;
+
+    // if (storagedStarWarsData) {
+    //   return JSON.parse(storagedStarWarsData);
+    // } else {
+    //   return [];
+    // }
+  });
+
+  // useEffect(() => {
+  //   setStarwarsData(chars);
+  // }, []);
+
+  //   useEffect(() => {
+  //     if (starwarsData !== []) {
+  //       localStorage.setItem(
+  //         "@StarWars:starwarsData",
+  //         JSON.stringify(starwarsData)
+  //       );
+  //     }
+  //   }, [starwarsData]);
+
+  const toggleFilter = () => {
+    setInputError(" ");
+    setFilter(!filter);
   };
 
-  const handlePlaySound = (e) => {
-    // soundRef.current.muted = true;
-    // console.log(Sound.props);
-    // handleIconShow1();
-    handlePauseSound();
-    soundRef.current.play();
-  };
-  const handlePlaySound2 = (e) => {
-    // handleIconShow2();
-    handlePauseSound();
-    soundRef2.current.play();
+  useEffect(() => {
+    starwarsData === prePeople
+      ? setStarwarsData(prePlanets)
+      : starwarsData === prePlanets
+      ? setStarwarsData(prePeople)
+      : getData();
+  }, [filter]);
+
+  useEffect(() => {
+    console.log(search);
+    handleSearch();
+  }, [search]);
+
+  useEffect(() => {});
+
+  const getData = async () => {
+    setLoading(true);
+
+    if (filter) {
+      const newData = await http.get("/planets");
+      setStarwarsData(newData.data.results);
+      setLoading(false);
+    } else {
+      const newData = await http.get("/people");
+      setStarwarsData(newData.data.results);
+      setLoading(false);
+    }
   };
 
-  const handlePauseSound = () => {
-    soundRef.current.currentTime = 0;
-    soundRef2.current.currentTime = 0;
+  const handleSearch = async () => {
+    if (!search) return;
+    setInputError(" ");
+
+    setLoading(true);
+    if (filter) {
+      try {
+        const newData = await http.get(`/planets?search=${search}`);
+
+        if (newData.data.results.length > 0) {
+          setStarwarsData(newData.data);
+        } else {
+          setStarwarsData([]);
+          setInputError("Opps! Nada foi encontrado nesta galaxia");
+        }
+        setLoading(false);
+      } catch (error) {
+        setInputError("Opps! Ocorreu algum erro com a nave");
+      }
+    } else {
+      try {
+        const newData = await http.get(`/people?search=${search}`);
+
+        if (newData.data.results.length > 0) {
+          setStarwarsData(newData.data.results);
+        } else {
+          setStarwarsData([]);
+          setInputError("Opps! Nada foi encontrado nesta galaxia");
+        }
+        setLoading(false);
+      } catch (error) {
+        setInputError("Opps! Ocorreu algum erro com a nave");
+      }
+    }
   };
 
-  // const handleIconShow1 = () => {
-  //   if (iconRef.current.className === "absolute -z-10 right-0 ml-5 hidden") {
-  //     iconRef.current.className =
-  //       "absolute -z-10 block right-0 ml-5  animate-pulse";
-  //   }
-  // };
-  // const handleIconHide1 = () => {
-  //   if (
-  //     iconRef.current.className ===
-  //     "absolute -z-10 block right-0 ml-5  animate-pulse"
-  //   ) {
-  //     iconRef.current.className = "absolute -z-10 right-0 ml-5 hidden";
-  //   } else {
-  //     return;
-  //   }
-  // };
-  // const handleIconShow2 = () => {
-  //   if (iconRef2.current.className === "absolute -z-10 right-0 ml-5 hidden") {
-  //     iconRef2.current.className =
-  //       "absolute -z-10 block right-0 ml-5  animate-pulse";
-  //   }
-  // };
-  // const handleIconHide2 = () => {
-  //   if (
-  //     iconRef2.current.className ===
-  //     "absolute -z-10 block right-0 ml-5  animate-pulse"
-  //   ) {
-  //     iconRef2.current.className = "absolute -z-10 right-0 ml-5 hidden";
-  //   } else {
-  //     return;
-  //   }
-  // };
+  async function handleStarwarsRequest(event) {
+    //Add new repo
+    console.log(search);
+    event.preventDefault();
 
-  const searchNow = true;
+    if (!search) {
+      setInputError("Type the author/name of the repo");
+      return;
+    }
+    try {
+      const response = await http.get(`repos/${search}`);
+      console.log(response.data);
+      const repository = response.data;
+      setStarwarsData([...starwarsData, repository]);
+      setSearch("");
+      setInputError("");
+    } catch (err) {
+      setInputError("Error on search for repo");
+    }
+  }
 
   return (
     <>
       <Head>
         <title>Inicio | StarWars</title>
       </Head>
+      <div className="p-6 xl:p-40 w-full md:p-5 sm:p-5 sm:w-200">
+        {/* <img src={logo} alt="Github Explorer" /> */}
+        <span className="text-5xl text-slate-700 mt-80 max-w-md font-mono font-bold">
+          Explore o mundo STAR WARS
+        </span>
 
-      <div className={styles.container}>
-        <header>
-          <div className=" pl-5 w-full flex flex-row items-center justify-between">
-            <span className="font-bold text-2xl">STAR WARS</span>
-
-            <div
-              onClick={toggleSearching}
-              className={
-                searching
-                  ? // ? styles.searchIcon
-                    "flex flex-row bg-slate-900 p-5 cursor-pointer -translate-x-96 duration-300 transition ease-in-out"
-                  : "flex flex-row bg-slate-900 p-5 cursor-pointer "
-              }
-            >
-              <IoSearchSharp
-                className="hover:fill-cyan-700 text-5xl"
-                color="#fff"
-              />
-            </div>
-          </div>
-        </header>
-
-        <audio
-          className="invisible"
-          ref={soundRef}
-          controls
-          preload="auto"
-          id="sabber"
+        <div
+          className="flex max-w-3xl mt-32 min-w-1  "
+          hasError={!!inputError}
+          // onSubmit={(e) => handleSearch(e)}
+          action=""
         >
-          <source src="fx4.mp3" type="audio/mpeg" />
-        </audio>
-        <audio
-          className="invisible"
-          ref={soundRef2}
-          controls
-          preload="auto"
-          id="sabber"
-        >
-          <source src="fx5.mp3" type="audio/mpeg" />
-        </audio>
-        {!searching ? (
-          <div className=" container  flex flex-col w-8/12 items-center p-1">
-            <div className="flex flex-col  w-8/12 items-start self-end justify-end  ">
-              <span className=" font-bold text-5xl  w-full border-b-4">
-                ESCOLHA
-              </span>
-              <span className=" font-bold text-5xl ">SABIAMENTE</span>
-            </div>
-            <div className="flex flex-row justify-between w-full pl-5 mt-28">
-              <button
-                onMouseEnter={handlePlaySound}
-                // onMouseLeave={handleIconHide1}
-                className="flex flex-row items-center justify-end bg-zinc-900 w-5/12 h-20 pr-5 hover:bg-cyan-700 hover:shadow-lg hover:shadow-cyan-500/30"
-              >
-                Personagens
-              </button>
-              <button
-                onMouseEnter={handlePlaySound2}
-                // onMouseLeave={handleIconHide2}
-                className="flex flex-row items-center justify-start bg-zinc-900 w-5/12 h-20 pl-5 hover:bg-purple-700 hover:shadow-lg hover:shadow-purple-500/50"
-              >
-                Planetas
-              </button>
-            </div>
-          </div>
-        ) : (
-          <SearchField
-            toggleSearching={toggleSearching}
-            searching={searching}
+          <input
+            className="flex  flex-1 outline-0 h-20 py-0 xl:px-24 md:px-24 pl-5 sm:pl-5 border-0 rounded-l text-stale-900  placeholder:text-slate-700"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Navegue pelo mundo star wars"
           />
+          <button
+            onClick={handleSearch}
+            className={
+              "flex items-center justify-center w-40 bg-gradient-to-r from-sky-500 to-indigo-500 rounded-r font-bold hover:bg-teal-700"
+            }
+            type="button"
+          >
+            Search
+          </button>
+        </div>
+
+        <div className="flex flex-row mt-4 w-64  items-center justify-between ">
+          <button
+            onClick={toggleFilter}
+            className={!filter ? filterStyles[0] : filterStyles[1]}
+          >
+            personagem
+          </button>
+          <button
+            onClick={toggleFilter}
+            className={filter ? filterStyles[0] : filterStyles[1]}
+          >
+            planeta
+          </button>
+        </div>
+
+        {inputError && (
+          <span className="block text-rose-900 mt-5">{inputError}</span>
         )}
+
+        <div className="mt-32 sm:mt-40 m-w-md">
+          {loading && (
+            <Image
+              className="absolute animate-pulse"
+              width="80"
+              height={80}
+              src="/loader.gif"
+              alt="ad"
+            />
+          )}
+          {starwarsData &&
+            starwarsData?.map((starWarsItem, index) => {
+              return <ItemLink filter={filter} starWarsItem={starWarsItem} />;
+            })}
+        </div>
       </div>
     </>
   );
 }
+
+Home.getInitialProps = async (ctx) => {
+  const peopleRes = await http.get("/people");
+  const planetsRes = await http.get("/planets");
+  return {
+    prePeople: peopleRes.data.results,
+    prePlanets: planetsRes.data.results,
+  };
+};
+
+export default Home;

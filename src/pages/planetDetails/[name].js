@@ -130,7 +130,14 @@ function CharacterDetails() {
             {noResidents && <ErrorNoResidentsWrapper />}
             {errorFetch && <ErrorFetchWrapper />}
             {people?.map((resident) => {
-              return <ItemLink list starWarsItem={resident} filter={false} />;
+              return (
+                <ItemLink
+                  key={resident.url}
+                  list
+                  starWarsItem={resident}
+                  filter={false}
+                />
+              );
             })}
           </div>
         </div>
